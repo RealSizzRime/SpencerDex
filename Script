@@ -1,4 +1,32 @@
 --!native
+local httpService = cloneref(game:GetService('HttpService'))
+
+local function decompile(scr)
+    local s, bytecode = pcall(getscriptbytecode, scr)
+    if not s then
+        return `failed to get bytecode { bytecode }`
+    end
+
+    local response = request({
+        Url = 'https://unluau.lonegladiator.dev/unluau/decompile',
+        Method = 'POST',
+        Headers = {
+            ['Content-Type'] = 'application/json',
+        },
+        Body = httpService:JSONEncode({
+            version = 5,
+            bytecode = crypt.base64.encode(bytecode)
+        })
+    })
+
+    local decoded = httpService:JSONDecode(response.Body)
+    if decoded.status ~= 'ok' then
+        return `decompilation failed: { decoded.status }`
+    end
+
+    return decoded.output
+end
+
 local Params = {
 	RepoURL = "https://raw.githubusercontent.com/luau/SomeHub/main/",
 	UMF = "UniversalMethodFinder",
@@ -20,7 +48,6 @@ finder({
 	writefile = 'string.find(...,"file",nil,true) and string.find(...,"write",nil,true)',
 }, true)
 
-local decompile = globalcontainer.decompile
 local gethiddenproperty = globalcontainer.gethiddenproperty
 local sethiddenproperty = globalcontainer.sethiddenproperty
 local writefile = globalcontainer.writefile
@@ -832,9 +859,9 @@ local function synsaveinstance(CustomOptions)
 		noscripts = false,
 		scriptcache = true,
 		-- decomptype = "new", -- * Deprecated
-		timeout = 30, -- Description: If the decompilation run time exceeds this value it gets cancelled.
+		-- timeout = 30, -- Description: If the decompilation run time exceeds this value it gets cancelled.
 		--* New:
-		__DEBUG_MODE = false, -- Recommended to enable if you wish to help us improve our products and find bugs / issues with it!
+		__DEBUG_MODE = true, -- Recommended to enable if you wish to help us improve our products and find bugs / issues with it!
 --Callback = nil, -- Description: If set, the serialized data will be sent to the callback instead of to file.
 		--Clipboard = false, -- Description: If set to true, the serialized data will be set to the clipboard, which can be later pasted into studio easily. Useful for saving models.
 		DecompileIgnore = { -- * Clean these up (merged Old Syn and New Syn)
@@ -1503,4 +1530,4 @@ local ExtraTime = 10
 	end
 end
 
-return synsaveinstance
+synsaveinstance()

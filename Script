@@ -1,0 +1,37 @@
+local httpService = cloneref(game:GetService('HttpService'))
+
+function decompile(scr)
+    local s, bytecode = pcall(getscriptbytecode, scr)
+    if not s then
+        return `failed to get bytecode { bytecode }`
+    end
+
+    local response = request({
+        Url = 'https://unluau.lonegladiator.dev/unluau/decompile',
+        Method = 'POST',
+        Headers = {
+            ['Content-Type'] = 'application/json',
+        },
+        Body = httpService:JSONEncode({
+            version = 5,
+            bytecode = crypt.base64.encode(bytecode)
+        })
+    })
+
+    local decoded = httpService:JSONDecode(response.Body)
+    if decoded.status ~= 'ok' then
+        warn("decompilation failed: " .. decoded.status)
+        return "decompilation failed"
+    end
+
+    return decoded.output
+end
+
+getgenv().decompile = decompile
+
+local versionNum = 1
+local folderName = "place" .. game.PlaceId .. "_" .. versionNum
+
+saveplace({
+  FileName = folderName
+})
